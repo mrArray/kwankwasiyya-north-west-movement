@@ -1,0 +1,17 @@
+PORT=3080
+NODE_ENV=development
+
+# Database Configuration
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_DATABASE=kwankwasiyya_db
+
+# JWT Secret
+JWT_SECRET=kwankwasiyyanorthwestmovementgwammaja
+
+# Frontend URL (for CORS)
+FRONTEND_URL=http://localhost:3000
+
+# File Upload
+MAX_FILE_SIZE=5242880
