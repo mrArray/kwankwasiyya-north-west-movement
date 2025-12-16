@@ -11,6 +11,7 @@ router.get('/verify/:registrationNumber', supporterController.verify);
 router.get('/', authMiddleware, supporterController.getAll);
 router.get('/statistics', authMiddleware, supporterController.getStatistics);
 router.get('/export/csv', authMiddleware, supporterController.exportCSV);
+router.get('/export/excel', authMiddleware, supporterController.exportExcel);
 router.get('/:id', authMiddleware, supporterController.getById);
 
 module.exports = router;

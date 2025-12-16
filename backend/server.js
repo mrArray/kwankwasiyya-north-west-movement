@@ -18,7 +18,10 @@ db.sequelize.sync()
 
 // Middleware setup
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: [
+    'https://kwankwasiyyanorthwestmovement.org', // no trailing slash
+    'http://localhost:3000'
+  ],
   credentials: true
 }));
 
@@ -45,12 +48,14 @@ const pdfRoutes = require('./routes/pdfRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const adminRegisterRoutes = require('./routes/adminRegisterRoutes');
+const locationRoutes = require('./routes/locationRoutes');
 
 app.use('/api/supporters', supporterRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminRegisterRoutes);
+app.use('/api/locations', locationRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {

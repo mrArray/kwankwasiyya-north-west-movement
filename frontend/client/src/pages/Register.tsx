@@ -2,11 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import IDCardPreview from "@/components/IDCardPreview";
 import IDCardPreviewModal from "@/components/IDCardPreviewModal";
 import { api, RegisterSupporterData, Supporter } from "@/lib/api";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 
@@ -27,12 +28,71 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationNumber, setRegistrationNumber] = useState<string>("");
   const [registeredSupporter, setRegisteredSupporter] = useState<Supporter | null>(null);
+  const [states, setStates] = useState<string[]>([]);
+  const [lgas, setLgas] = useState<string[]>([]);
+  const [loadingLgas, setLoadingLgas] = useState(false);
+
+  // Fetch states on mount
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const response = await api.getStates();
+        if (response.success && response.data) {
+          setStates(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching states:', error);
+        toast.error('Failed to load states');
+      }
+    };
+    fetchStates();
+  }, []);
+
+  // Fetch LGAs when state changes
+  useEffect(() => {
+    const fetchLGAs = async () => {
+      if (!formData.state) {
+        setLgas([]);
+        return;
+      }
+      
+      setLoadingLgas(true);
+      try {
+        const response = await api.getLGAs(formData.state);
+        if (response.success && response.data) {
+          setLgas(response.data.lgas);
+        }
+      } catch (error) {
+        console.error('Error fetching LGAs:', error);
+        toast.error('Failed to load LGAs');
+        setLgas([]);
+      } finally {
+        setLoadingLgas(false);
+      }
+    };
+    fetchLGAs();
+  }, [formData.state]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: name === "age" ? (value ? parseInt(value) : undefined) : value,
+    }));
+  };
+
+  const handleStateChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      state: value,
+      LG: "", // Reset LG when state changes
+    }));
+  };
+
+  const handleLGChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      LG: value,
     }));
   };
 
@@ -201,26 +261,43 @@ export default function Register() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="state">State *</Label>
-                    <Input
-                      id="state"
-                      name="state"
+                    <Select
                       value={formData.state}
-                      onChange={handleInputChange}
-                      placeholder="Enter your state"
+                      onValueChange={handleStateChange}
                       required
-                    />
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select your state" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {states.map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="LG">Local Government *</Label>
-                    <Input
-                      id="LG"
-                      name="LG"
+                    <Select
                       value={formData.LG}
-                      onChange={handleInputChange}
-                      placeholder="Enter your LG"
+                      onValueChange={handleLGChange}
+                      disabled={!formData.state || loadingLgas}
                       required
-                    />
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={loadingLgas ? "Loading LGAs..." : "Select your LG"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {lgas.map((lg) => (
+                          <SelectItem key={lg} value={lg}>
+                            {lg}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

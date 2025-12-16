@@ -64,7 +64,7 @@ Pure Node.js, Express.js, and MySQL backend for the Kwankwasiyya Digital ID Syst
    npm start
    ```
 
-The server will start on `http://localhost:3080`
+The server will start on `https://api.kwankwasiyyanorthwestmovement.org `
 
 ## API Endpoints
 

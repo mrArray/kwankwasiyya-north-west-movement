@@ -59,7 +59,7 @@ The frontend connects to the backend API using the `VITE_API_BASE_URL` environme
 
 **Local Development:**
 ```
-VITE_API_BASE_URL=http://localhost:3080/api
+VITE_API_BASE_URL=https://api.kwankwasiyyanorthwestmovement.org /api
 ```
 
 **Production:**

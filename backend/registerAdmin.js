@@ -23,7 +23,7 @@ const registerAdmin = async () => {
 
     rl.close();
 
-    const response = await fetchFn('http://localhost:3080/api/admin/register', {
+    const response = await fetchFn(`${process.env.VITE_API_URL}/api/admin/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, name })

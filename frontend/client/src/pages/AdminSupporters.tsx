@@ -79,6 +79,23 @@ export default function AdminSupporters() {
     }
   };
 
+  const handleExportExcel = async () => {
+    try {
+      const blob = await api.exportExcel();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `supporters_${new Date().toISOString().split("T")[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success("Excel file exported successfully");
+    } catch (error) {
+      toast.error("Failed to export Excel");
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -87,10 +104,16 @@ export default function AdminSupporters() {
             <h2 className="text-3xl font-bold text-foreground">Supporters</h2>
             <p className="text-muted-foreground">Manage and view all registered supporters</p>
           </div>
-          <Button onClick={handleExportCsv}>
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleExportCsv}>
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button onClick={handleExportExcel} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export Excel
+            </Button>
+          </div>
         </div>
 
         <Card>

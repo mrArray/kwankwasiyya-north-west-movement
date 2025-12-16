@@ -326,3 +326,58 @@ exports.exportCSV = async (req, res) => {
     });
   }
 };
+
+exports.exportExcel = async (req, res) => {
+  try {
+    const supporters = await Supporter.findAll({
+      order: [['createdAt', 'DESC']]
+    });
+
+    // Create Excel-compatible CSV with UTF-8 BOM for proper Excel import
+    const headers = [
+      'Registration Number',
+      'Full Name',
+      'Age',
+      'Business',
+      'State',
+      'LG',
+      'Ward',
+      'Polling Unit',
+      'Phone Number',
+      'Email',
+      'Registration Date'
+    ];
+
+    const csvRows = [headers.join(',')];
+
+    supporters.forEach(supporter => {
+      const row = [
+        supporter.registrationNumber,
+        `"${supporter.fullName.replace(/"/g, '""')}"`,
+        supporter.age || '',
+        supporter.business ? `"${supporter.business.replace(/"/g, '""')}"` : '',
+        supporter.state,
+        supporter.LG,
+        supporter.ward,
+        supporter.pollingUnit,
+        supporter.phoneNumber,
+        supporter.email || '',
+        new Date(supporter.createdAt).toISOString().split('T')[0]
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvContent = '\uFEFF' + csvRows.join('\n'); // Add BOM for Excel UTF-8 recognition
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=supporters.csv');
+    res.status(200).send(csvContent);
+  } catch (error) {
+    console.error("Export Excel error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error exporting to Excel",
+      error: error.message
+    });
+  }
+};

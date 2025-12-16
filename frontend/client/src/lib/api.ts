@@ -8,7 +8,7 @@ export function getImageUrl(photoUrl: string): string {
   const path = photoUrl.startsWith('/') ? photoUrl : `/${photoUrl}`;
   return `${base}${path}`;
 }
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3080';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.kwankwasiyyanorthwestmovement.org';
 
 export interface RegisterSupporterData {
   fullName: string;
@@ -217,7 +217,7 @@ class ApiClient {
   }
 
   async getSupporterById(id: number): Promise<ApiResponse<Supporter>> {
-    return this.request<Supporter>(`/supporters/${id}`);
+    return this.request<Supporter>(`/api/supporters/${id}`);
   }
 
   async getStatistics(): Promise<ApiResponse<Statistics>> {
@@ -230,12 +230,29 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(`${this.baseUrl}/supporters/export/csv`, {
+    const response = await fetch(`${this.baseUrl}/api/supporters/export/csv`, {
       headers,
     });
 
     if (!response.ok) {
       throw new Error('Failed to export CSV');
+    }
+
+    return response.blob();
+  }
+
+  async exportExcel(): Promise<Blob> {
+    const headers: HeadersInit = {};
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    const response = await fetch(`${this.baseUrl}/api/supporters/export/excel`, {
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to export Excel');
     }
 
     return response.blob();
@@ -255,6 +272,19 @@ class ApiClient {
 
   async getKeyMetrics(): Promise<ApiResponse<Metrics>> {
     return this.request<Metrics>('/api/analytics/metrics');
+  }
+
+  // Location APIs
+  async getStates(): Promise<ApiResponse<string[]>> {
+    return this.request<string[]>('/api/locations/states');
+  }
+
+  async getLGAs(state: string): Promise<ApiResponse<{ state: string; lgas: string[] }>> {
+    return this.request<{ state: string; lgas: string[] }>(`/api/locations/lgas?state=${encodeURIComponent(state)}`);
+  }
+
+  async getAllStatesWithLGAs(): Promise<ApiResponse<Array<{ state: string; lgas: string[]; lgaCount: number }>>> {
+    return this.request<Array<{ state: string; lgas: string[]; lgaCount: number }>>('/api/locations/all');
   }
 }
 

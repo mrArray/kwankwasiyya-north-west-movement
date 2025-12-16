@@ -2,21 +2,37 @@
 const puppeteer = require('puppeteer');
 const db = require("../config/sequelize");
 const Supporter = db.supporters;
+const path = require('path');
+const fs = require('fs');
 
-
-// Helper to get full image URL
-function getImageUrl(photoUrl) {
-  if (!photoUrl) return '';
-  if (photoUrl.startsWith('http')) return photoUrl;
-  const base = process.env.API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:3080';
-  const pathUrl = photoUrl.startsWith('/') ? photoUrl : `/${photoUrl}`;
-  return `${base}${pathUrl}`;
+// Helper to convert image to base64
+function imageToBase64(imagePath) {
+  try {
+    const fullPath = path.join(__dirname, '..', imagePath);
+    if (fs.existsSync(fullPath)) {
+      const imageBuffer = fs.readFileSync(fullPath);
+      const base64 = imageBuffer.toString('base64');
+      const ext = path.extname(imagePath).toLowerCase();
+      const mimeType = ext === '.png' ? 'image/png' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/jpeg';
+      return `data:${mimeType};base64,${base64}`;
+    }
+  } catch (err) {
+    console.error('Error converting image to base64:', err);
+  }
+  return '';
 }
 
 async function generateIdCardHtml(supporter) {
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=REG:${encodeURIComponent(supporter.registrationNumber)}`;
-  const base = process.env.API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:3080';
-  const logoUrl = `${base}/logo.jpeg`;
+  
+  // Convert logo to base64
+  const logoBase64 = imageToBase64('logo.jpeg');
+  
+  // Convert supporter photo to base64
+  let photoBase64 = '';
+  if (supporter.photoUrl) {
+    photoBase64 = imageToBase64(supporter.photoUrl);
+  }
   return `
   <html>
     <head>
@@ -146,12 +162,12 @@ async function generateIdCardHtml(supporter) {
       <div class="card">
         <div class="header">
           <div class="header-content">
-            <img src="${logoUrl}" alt="Logo" />
+            <img src="${logoBase64}" alt="Logo" />
             <div class="header-title">
               <h2>KWANKWASIYYA</h2>
               <p>NORTHWEST MOVEMENT</p>
             </div>
-            <img src="${logoUrl}" alt="Logo" />
+            <img src="${logoBase64}" alt="Logo" />
           </div>
         </div>
         <div class="main">
@@ -164,7 +180,7 @@ async function generateIdCardHtml(supporter) {
             </div>
             <div class="photo">
               <div class="photo-bg"></div>
-              <img src="${getImageUrl(supporter.photoUrl)}" alt="${supporter.fullName}" />
+              <img src="${photoBase64}" alt="${supporter.fullName}" />
               <div class="reg-badge">
                 <div class="reg-badge-bg"></div>
                 <div class="reg-badge-content">
@@ -224,10 +240,26 @@ exports.generatePDF = async (req, res) => {
     const html = await generateIdCardHtml(supporter);
     let browser;
     try {
-      browser = await puppeteer.launch();
+      browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=IsolateOrigins,site-per-process'
+        ],
+        timeout: 60000
+      });
       const page = await browser.newPage();
       await page.setViewport({ width: 800, height: 1200 });
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      
+      // Set content with a longer timeout since we're using base64 images
+      await page.setContent(html, { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000 
+      });
 
       if (type === 'image') {
         // Wait for card to render

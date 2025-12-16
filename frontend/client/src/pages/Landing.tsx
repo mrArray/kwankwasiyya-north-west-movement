@@ -19,6 +19,9 @@ export default function Landing() {
             <Button variant="ghost" asChild>
               <Link href="/verify">Verify ID</Link>
             </Button>
+            <Button variant="ghost" asChild>
+              <Link href="/about-movement">Munufar Kungiya</Link>
+            </Button>
             <Button asChild>
               <Link href="/register">Register Now</Link>
             </Button>
